@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TrashTalk — Result</title>
+<style>
+  :root{ --bg:#0f1216; --card:#161b22; --muted:#9aa4b2; --acc:#7ee787; --acc2:#58a6ff; --text:#e6edf3; --border:#2a2f37; --danger:#ff6b6b; }
+  *{box-sizing:border-box}
+  body{ margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial;
+        background:linear-gradient(180deg,#0d1117 0%,#0f1216 100%); color:var(--text); }
+  .container{max-width:900px; margin:0 auto; padding:24px;}
+  header h1{margin:.3rem 0 0; font-size:clamp(28px,4vw,40px);}
+  .subtitle{margin:8px 0 24px; color:var(--muted)}
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .meta{ color:var(--muted); font-size:14px; display:grid; grid-template-columns:max-content 1fr; gap:6px 10px; margin-top:6px }
+  .meta b{ color:#c9d1d9 }
+  .result{ border:1px solid var(--border); border-radius:12px; padding:14px; background:rgba(126,231,135,0.08); margin-top:16px }
+  .result h2{ margin:0 0 6px; color:var(--acc); font-size:20px; }
+  .actions{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .btn{ appearance:none; border:1px solid transparent; background:var(--acc2); color:#081018;
+        font-weight:600; padding:10px 14px; border-radius:12px; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn.secondary{ background:transparent; color:var(--text); border-color:var(--border); }
+</style>
+</head>
+<body>
+  <header class="container">
+    <h1>♻️ TrashTalk</h1>
+    <p class="subtitle">Here’s what we found from your photo.</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h3>✅ File Uploaded Successfully</h3>
+      <div class="meta">
+      </div>
+
+      <div class="result">
+        <h2>Analysis</h2>
+        <p id="analysis">${analysis}</p>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="/upload-image">Analyze another photo</a>
+        <a class="btn secondary" href="/">Back to Home</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
