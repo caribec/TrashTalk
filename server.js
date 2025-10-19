@@ -1,11 +1,11 @@
 const express = require('express');
 const app = express();
 const multer  = require('multer');
-const { recycleAnalyzer } = require('./recycleAnalyzerAPI');
+const { recycleAnalyzer } = require('./Services/recycleAnalyzerAPI');
 const path = require('path');
 const fs = require('fs')
-const analyzeResult = path.join(".", 'analyzeResult.html')
-const mainPage = path.join(".", 'main.html')
+const analyzeResult = path.join(".", 'Pages/analyzeResult.html')
+const mainPage = path.join(".", 'Pages/main.html')
 const port = 3000;
 
 
@@ -16,7 +16,7 @@ const port = 3000;
 const storage = multer.diskStorage({
     // Sets the destination directory for the uploaded files
     destination: (req, file, cb) => {
-        cb(null, 'uploadedImages/');
+        cb(null, 'ImageStore/');
     },
     // Sets the filename
     filename: (req, file, cb) => {
