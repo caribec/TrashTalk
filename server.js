@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const multer  = require('multer');
 const path = require('path');
+const { recycleAnalyzer } = require('./recycleAnalyzerAPI');
 const port = 3000;
 
 
@@ -16,7 +17,7 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
         // Creates a unique filename: 'fieldname-timestamp.ext'
         // e.g., 'image-1678886400000.jpg'
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+        cb(null, "userImage");
     }
 });
 
@@ -24,7 +25,7 @@ const upload = multer({ storage: storage });
 
 //home page
 app.get('/', (req, res) => {
-  res.send('<h1>Image Upload Server Running</h1><p>Visit /upload to see the form.</p>');
+  res.send('<h1>Image Upload Server Running</h1><p>Visit /upload-image to see the form.</p>');
 });
 
 
@@ -50,20 +51,30 @@ app.get('/upload-image', (req, res) => {
 });
 
 //accepting photo
-app.post('/upload-image', upload.single('image'), (req, res) => {
+app.post('/upload-image', upload.single('image'), async (req, res) => {
     if (req.file) {
+        try {
+            //try analyzing file
+            const analysis = await recycleAnalyzer(req.file.path);
         // req.file contains information about the processed file
         res.send(`
             <h1>File Uploaded Successfully!</h1>
             <p>Filename: ${req.file.filename}</p>
             <p>Path: ${req.file.path}</p>
             <p>Size: ${req.file.size} bytes</p>
+            <p> ${analysis} </p>
             <br>
             <a href="/upload-image">Upload another file</a>
         `);
+        }
+        catch (err) {
+            res.status(500).send("Error trying to analyze.")
+            console.log(err)
+        }
     } else {
         res.status(400).send('No file selected.');
     }
+    
 });
 
 
