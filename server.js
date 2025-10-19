@@ -1,81 +1,71 @@
 const express = require('express');
 const app = express();
 const multer  = require('multer');
-const path = require('path');
 const { recycleAnalyzer } = require('./recycleAnalyzerAPI');
+const path = require('path');
+const fs = require('fs')
+const analyzeResult = path.join(".", 'analyzeResult.html')
+const mainPage = path.join(".", 'main.html')
 const port = 3000;
+
+
+
 
 
 //storage engine
 const storage = multer.diskStorage({
     // Sets the destination directory for the uploaded files
     destination: (req, file, cb) => {
-        // 'uploads/' is the folder where images will be saved
         cb(null, 'uploadedImages/');
     },
     // Sets the filename
     filename: (req, file, cb) => {
-        // Creates a unique filename: 'fieldname-timestamp.ext'
-        // e.g., 'image-1678886400000.jpg'
         cb(null, "userImage");
     }
 });
 
+
 const upload = multer({ storage: storage });
 
-//home page
+//home page to be redirected
 app.get('/', (req, res) => {
-  res.send('<h1>Image Upload Server Running</h1><p>Visit /upload-image to see the form.</p>');
+  res.redirect('/upload-image');
 });
 
 
-let uploadHTML = 
-`<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Image Upload</title>
-        </head>
-        <body>
-            <h1>Can I recycle it?</h1>
-            <p>Upload an image and see if you can recycle it or not!</p>
-            <form action="/upload-image" method="post" enctype="multipart/form-data">
-                <input type="file" name="image" accept="image/*" required>
-                <button type="submit">Upload Image</button>
-            </form>
-        </body>
-        </html>`;
 
 //upload page
 app.get('/upload-image', (req, res) => {
-    res.send(uploadHTML)
+    try {
+    mainHTML = fs.readFileSync(mainPage, 'utf-8'); //main page html
+    res.send(mainHTML)
+    } catch (err) {
+        res.status(404).send('Page could not be uploaded.');
+        console.log(err)
+    }
 });
 
 //accepting photo
 app.post('/upload-image', upload.single('image'), async (req, res) => {
-    if (req.file) {
-        try {
-            //try analyzing file
-            const analysis = await recycleAnalyzer(req.file.path);
-        // req.file contains information about the processed file
-        res.send(`
-            <h1>File Uploaded Successfully!</h1>
-            <p>Filename: ${req.file.filename}</p>
-            <p>Path: ${req.file.path}</p>
-            <p>Size: ${req.file.size} bytes</p>
-            <p> ${analysis} </p>
-            <br>
-            <a href="/upload-image">Upload another file</a>
-        `);
-        }
-        catch (err) {
-            res.status(500).send("Error trying to analyze.")
-            console.log(err)
-        }
-    } else {
-        res.status(400).send('No file selected.');
-    }
-    
+  if (!req.file) return res.status(400).send('No file selected.');
+    resultHTML = fs.readFileSync(analyzeResult, 'utf-8');
+  try {
+    const analysis = await recycleAnalyzer(req.file.path, req.file.mimetype);
+    resultHTML = resultHTML.replace('${analysis}', escapeHtml(analysis))
+
+    res.send(resultHTML);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error trying to analyze.');
+  }
 });
+
+// helper at the top or anywhere above this route
+function escapeHtml(s=''){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c]));
+}
+
 
 
 app.listen(port, () => {

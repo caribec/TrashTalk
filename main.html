@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrashTalk — Can I Recycle It?</title>
+  <style>
+    :root{
+      --bg:#0f1216; --card:#161b22; --muted:#9aa4b2; --acc:#58a6ff; --acc2:#7ee787; --text:#e6edf3; --border:#2a2f37; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial;
+      background:linear-gradient(180deg,#0d1117 0%,#0f1216 100%); color:var(--text);
+    }
+    .container{max-width: 920px; margin: 0 auto; padding: 24px;}
+    header h1{margin:.3rem 0 0; font-size: clamp(28px, 4vw, 40px);}
+    .subtitle{margin:8px 0 24px; color:var(--muted)}
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .dropzone{
+      border:2px dashed var(--border); border-radius:16px; padding:28px; text-align:center;
+      background: rgba(255,255,255,0.02); transition: border-color .2s, background .2s;
+    }
+    .dropzone.dragover{ border-color: var(--acc); background: rgba(88,166,255,0.06); }
+    .dz-title{font-size:18px; margin:4px 0 0}
+    .dz-sub{color:var(--muted); margin:6px 0 14px}
+    .btn{
+      appearance:none; border:1px solid transparent; background:var(--acc); color:#081018;
+      font-weight:600; padding:10px 14px; border-radius:12px; cursor:pointer; margin:4px 6px;
+    }
+    .btn:hover{filter:brightness(1.05)}
+    .btn.ghost{background:transparent; border-color:transparent; color:var(--muted)}
+    .btn.outline{background:transparent; color:var(--text); border-color:var(--border)}
+    .actions{display:flex; gap:10px; margin-top:12px; justify-content:center; flex-wrap:wrap}
+    .note{color:var(--muted); font-size:12px; margin-top:10px; text-align:center}
+    .preview{margin-top:18px}
+    .preview img{max-width:100%; border-radius:12px; border:1px solid var(--border)}
+    .preview-info{display:flex; gap:8px; align-items:center; margin-top:10px; color:var(--muted)}
+    .hidden{display:none}
+    .warn{color:var(--danger); font-size:14px; margin-top:8px; text-align:center; display:none}
+    .warn.show{display:block}
+    footer{opacity:.7; text-align:center; margin-top:18px}
+  </style>
+</head>
+<body>
+  <header class="container">
+    <h1>♻️ TrashTalk</h1>
+    <p class="subtitle">Drop a photo or choose one. You need an image to analyze.</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="dropzone" id="dropzone">
+        <div>
+          <p class="dz-title">Drag & drop an image here</p>
+          <p class="dz-sub">or</p>
+          <button class="btn" id="chooseBtn" type="button">Choose a photo</button>
+
+          <form id="uploadForm" action="/upload-image" method="post" enctype="multipart/form-data">
+            <input id="fileInput" name="image" type="file" accept="image/*" class="hidden" />
+            <div class="actions">
+              <button id="submitBtn" class="btn" type="submit">Analyze</button>
+              <button id="clearBtn" class="btn ghost" type="button">Clear</button>
+            </div>
+            <div id="warnMsg" class="warn">Please select or drop an image before analyzing.</div>
+          </form>
+
+          <p class="note">Max 10MB • JPG/PNG recommended</p>
+        </div>
+      </div>
+
+      <div id="previewWrap" class="preview hidden">
+        <img id="previewImg" alt="Selected preview" />
+        <div class="preview-info" id="fileMeta"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="container">
+    <small>Your friendly neighborhood clean team.</small>
+  </footer>
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const chooseBtn = document.getElementById('chooseBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const previewWrap = document.getElementById('previewWrap');
+    const previewImg = document.getElementById('previewImg');
+    const fileMeta = document.getElementById('fileMeta');
+    const warnMsg = document.getElementById('warnMsg');
+
+    let currentFile = null;
+
+    chooseBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+    ['dragenter','dragover'].forEach(ev =>
+      dropzone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); })
+    );
+    ['dragleave','drop'].forEach(ev =>
+      dropzone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); })
+    );
+    dropzone.addEventListener('drop', e => {
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleFile(file);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      currentFile = null;
+      fileInput.value = '';
+      previewImg.src = '';
+      previewWrap.classList.add('hidden');
+      fileMeta.textContent = '';
+      submitBtn.disabled = true;
+      warnMsg.classList.remove('show');
+    });
+
+    uploadForm.addEventListener('submit', (e) => {
+      // block submit if no file chosen
+      if (!fileInput.files || !fileInput.files.length) {
+        e.preventDefault();
+        warnMsg.classList.add('show');
+        return;
+      }
+      warnMsg.classList.remove('show');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Analyzing…';
+    });
+
+    function handleFile(file){
+      warnMsg.classList.remove('show');
+      if(!file) return;
+      if(!file.type.startsWith('image/')){ alert('Please choose an image file.'); return; }
+      if(file.size > 10*1024*1024){ alert('File is too large (max 10MB).'); return; }
+
+      // place file into input if came from drag&drop
+      if (fileInput.files?.[0] !== file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+      }
+
+      currentFile = file;
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewWrap.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Analyze';
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>
