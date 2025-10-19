@@ -152,7 +152,6 @@
       reader.onload = e => {
         previewImg.src = e.target.result;
         previewWrap.classList.remove('hidden');
-        fileMeta.textContent = `\${file.name} • \${Math.round(file.size/1024)} KB`;
         submitBtn.disabled = false;
         submitBtn.textContent = 'Analyze';
       };
