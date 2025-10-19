@@ -37,7 +37,7 @@ let uploadHTML =
         <body>
             <h1>Can I recycle it?</h1>
             <p>Upload an image and see if you can recycle it or not!</p>
-            <form action="/upload" method="post" enctype="multipart/form-data">
+            <form action="/upload-image" method="post" enctype="multipart/form-data">
                 <input type="file" name="image" accept="image/*" required>
                 <button type="submit">Upload Image</button>
             </form>
@@ -48,6 +48,24 @@ let uploadHTML =
 app.get('/upload-image', (req, res) => {
     res.send(uploadHTML)
 });
+
+//accepting photo
+app.post('/upload-image', upload.single('image'), (req, res) => {
+    if (req.file) {
+        // req.file contains information about the processed file
+        res.send(`
+            <h1>File Uploaded Successfully!</h1>
+            <p>Filename: ${req.file.filename}</p>
+            <p>Path: ${req.file.path}</p>
+            <p>Size: ${req.file.size} bytes</p>
+            <br>
+            <a href="/upload-image">Upload another file</a>
+        `);
+    } else {
+        res.status(400).send('No file selected.');
+    }
+});
+
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
